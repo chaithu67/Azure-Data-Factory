@@ -1,0 +1,203 @@
+{
+	"name": "pl_process_f1_data",
+	"properties": {
+		"activities": [
+			{
+				"name": "Execute Ingestion Pipeline",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_ingest_f1_data",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_window_end_date": {
+							"value": "@formatDateTime(pipeline().parameters.p_window_end_date, 'yyy-MM-dd')",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Execute Tranformation Pipeline",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute Ingestion Pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_transform_f1_data",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_window_end_date": {
+							"value": "@formatDateTime(pipeline().parameters.p_window_end_date, 'yyy-MM-dd')",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Ingestion status email",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Execute Ingestion Pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json"
+					},
+					"url": {
+						"value": "https://prod-31.centralindia.logic.azure.com:443/workflows/53d91d8a12f5491bbfedf37d1cdeb805/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=eY9-5eAD_ZEVB_3KcCruR0unO-MPWKxlf3myrY2_190",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "{\n  \"pipelineName\": \"@{pipeline().Pipeline}\",\n  \"runId\": \"@{pipeline().RunId}\",\n  \"status\": \"Succeeded\",\n  \"errorMessage\": \"\",\n  \"triggerTime\": \"@{pipeline().TriggerTime}\"\n}\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "On Failure",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Execute Ingestion Pipeline",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json"
+					},
+					"url": {
+						"value": "https://prod-31.centralindia.logic.azure.com:443/workflows/53d91d8a12f5491bbfedf37d1cdeb805/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=eY9-5eAD_ZEVB_3KcCruR0unO-MPWKxlf3myrY2_190",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "{\n  \"pipelineName\": \"@{pipeline().Pipeline}\",\n  \"runId\": \"@{pipeline().RunId}\",\n  \"status\": \"Failed\",\n  \"errorMessage\": \"@{activity('Execute Ingestion Pipeline').error.message}\",\n  \"triggerTime\": \"@{pipeline().TriggerTime}\"\n}",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Trasformations status email",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Execute Tranformation Pipeline",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json"
+					},
+					"url": {
+						"value": "https://prod-31.centralindia.logic.azure.com:443/workflows/53d91d8a12f5491bbfedf37d1cdeb805/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=eY9-5eAD_ZEVB_3KcCruR0unO-MPWKxlf3myrY2_190",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "{\n  \"pipelineName\": \"@{pipeline().Pipeline}\",\n  \"runId\": \"@{pipeline().RunId}\",\n  \"status\": \"Succeeded\",\n  \"errorMessage\": \"\",\n  \"triggerTime\": \"@{pipeline().TriggerTime}\"\n}\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "On Failure_copy1",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Execute Tranformation Pipeline",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json"
+					},
+					"url": {
+						"value": "https://prod-31.centralindia.logic.azure.com:443/workflows/53d91d8a12f5491bbfedf37d1cdeb805/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=eY9-5eAD_ZEVB_3KcCruR0unO-MPWKxlf3myrY2_190",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "{\n  \"pipelineName\": \"@{pipeline().Pipeline}\",\n  \"runId\": \"@{pipeline().RunId}\",\n  \"status\": \"Failed\",\n  \"errorMessage\": \"@{activity('Execute Ingestion Pipeline').error.message}\",\n  \"triggerTime\": \"@{pipeline().TriggerTime}\"\n}",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"concurrency": 1,
+		"parameters": {
+			"p_window_end_date": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-01-25T11:17:01Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

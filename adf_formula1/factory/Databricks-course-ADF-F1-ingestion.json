@@ -1,0 +1,9 @@
+{
+	"name": "Databricks-course-ADF-F1-ingestion",
+	"location": "centralindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "66ddfc75-3a3f-46a2-be6b-2620eb00b6af",
+		"tenantId": "7a32c68c-ea8a-47f7-ad84-650e024e3c98"
+	}
+}
